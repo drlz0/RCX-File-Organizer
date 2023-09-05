@@ -6,7 +6,7 @@
 #include <ctype.h>
 
 int isImageFile(const char *fileName) {
-    const char *imageExtensions[] = {".jpg", ".jpeg", ".png", ".bmp", ".mp4", ".webm", ".gif"}; // Add more image extensions if needed
+    const char *imageExtensions[] = {".jpg", ".jpeg", ".png", ".bmp", ".mp4", ".webm", ".gif"}; // Add more image extensions if it is needed
     int numExtensions = sizeof(imageExtensions) / sizeof(imageExtensions[0]);
 
     char lowercaseFileName[256];
