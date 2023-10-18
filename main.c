@@ -5,8 +5,9 @@
 #include <sys/stat.h>
 #include <ctype.h>
 
+// Function to check if a file has an image extension
 int isImageFile(const char *fileName) {
-    const char *imageExtensions[] = {".jpg", ".jpeg", ".png", ".bmp", ".mp4", ".webm", ".gif"}; // Add more image extensions if it is needed
+    const char *imageExtensions[] = {".jpg", ".jpeg", ".png", ".bmp", ".mp4", ".webm", ".gif"}; // Add more image extensions if needed
     int numExtensions = sizeof(imageExtensions) / sizeof(imageExtensions[0]);
 
     char lowercaseFileName[256];
@@ -24,10 +25,11 @@ int isImageFile(const char *fileName) {
     return 0; // File does not have an image extension
 }
 
-void renameFilesInFolder(const char *folderPath, const char *name) {
+// Function to rename files in a folder
+void renameFilesInFolder(const char *folderPath, const char *name, int startCounter) {
     DIR *dir;
     struct dirent *ent;
-    int counter = 0;
+    int counter = startCounter; // Initialize the counter with the startCounter value
 
     if ((dir = opendir(folderPath)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
@@ -60,17 +62,27 @@ void renameFilesInFolder(const char *folderPath, const char *name) {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc < 3) {
+        printf("Usage: %s <folder_path> <name> [-c <start_counter>]\n", argv[0]);
+        return 1;
+    }
+
     char folderPath[256];
     char name[256];
+    int startCounter = 0; // Default startCounter value
 
-    printf("Enter the path to the folder: ");
-    scanf("%s", folderPath);
+    // Parse command-line arguments
+    strncpy(folderPath, argv[1], sizeof(folderPath) - 1);
+    strncpy(name, argv[2], sizeof(name) - 1);
 
-    printf("Enter the desired name: ");
-    scanf("%s", name);
+    for (int i = 3; i < argc; i++) {
+        if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
+            startCounter = atoi(argv[i + 1]);
+        }
+    }
 
-    renameFilesInFolder(folderPath, name);
+    renameFilesInFolder(folderPath, name, startCounter);
 
     return 0;
 }
