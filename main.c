@@ -63,8 +63,8 @@ void renameFilesInFolder(const char *folderPath, const char *name, int startCoun
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        printf("Usage: %s <folder_path> <name> [-c <start_counter>]\n", argv[0]);
+    if (argc < 4) {
+        printf("Usage: %s <folder_path> -r <new_filename> [-c <start_counter>]\n", argv[0]);
         return 1;
     }
 
@@ -74,10 +74,11 @@ int main(int argc, char *argv[]) {
 
     // Parse command-line arguments
     strncpy(folderPath, argv[1], sizeof(folderPath) - 1);
-    strncpy(name, argv[2], sizeof(name) - 1);
 
-    for (int i = 3; i < argc; i++) {
-        if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "-r") == 0 && i + 1 < argc) {
+            strncpy(name, argv[i + 1], sizeof(name) - 1);
+        } else if (strcmp(argv[i], "-c") == 0 && i + 1 < argc) {
             startCounter = atoi(argv[i + 1]);
         }
     }
