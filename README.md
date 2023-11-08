@@ -1,6 +1,6 @@
 # RCX-File-Organizer
 ## Organize your files
-works on linux (Debian 12) and windows 10<br>
+works on Linux (tested only on Debian) and Windows 10<br>
 available options for now is changing names of all images in folder in a way that it gets incremented by 1.<br>
 # How to
 _./main(.exe if windows) /path/to/folder_ <br>
