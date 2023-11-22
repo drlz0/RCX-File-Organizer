@@ -70,15 +70,31 @@ void takeNameFromTxt(const char *folderPath)
     struct dirent *ent;
     FILE *fptr;
     char numberInFile[32];
-    long long int numberInFileInt;
+    long long int numberInFileInt; // Needed for incrementation of the number in file
 
     if((fptr = fopen("randomname.txt", "r")) == NULL) {
         printf("Failed to open file\n");
+        fclose(fptr);
         return;
     }
 
-    fgets(numberInFile, 32, fptr);
+    if (fgets(numberInFile, sizeof(numberInFile), fptr) == NULL) {
+        printf("Failed to read number from file\n");
+        fclose(fptr);
+        return;
+    }
+
     fclose(fptr);
+
+    // Check if the read content is a valid number
+    char *endptr;
+    numberInFileInt = strtoll(numberInFile, &endptr, 10);
+
+    // Check for a valid number
+    if (*endptr != '\0' || strspn(numberInFile, "0123456789") != strlen(numberInFile)) {
+        printf("Invalid number in file\n");
+        return;
+    }
 
     if ((dir = opendir(folderPath)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
@@ -113,6 +129,7 @@ void takeNameFromTxt(const char *folderPath)
     } 
     if((fptr = fopen("randomname.txt", "w")) == NULL) {
         printf("Failed to open file\n");
+        fclose(fptr);
         return;
     }
     fprintf(fptr, numberInFile);
