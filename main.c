@@ -30,8 +30,9 @@ int isImageFile(const char *fileName)
     return 0; // File does not have an image extension
 }
 
-// logging
-void logToFile(const char *logMessage, const char *logFilePath) {
+/* Loggin implementation */
+void logToFile(const char *logMessage, const char *logFilePath) 
+{
     FILE *logFile = fopen(logFilePath, "a");
     if (logFile != NULL) {
         time_t rawtime;
@@ -49,13 +50,108 @@ void logToFile(const char *logMessage, const char *logFilePath) {
     }
 }
 
+/* File copying function */
+int copyFile(const char *sourcePath, const char *destinationPath) {
+    // Open the source file for reading
+    FILE *sourceFile = fopen(sourcePath, "rb");
+    if (sourceFile == NULL) {
+        printf("Failed to open source file '%s' for reading.\n", sourcePath);
+        return 0; 
+    }
+
+    // Open the destination file for writing
+    FILE *destinationFile = fopen(destinationPath, "wb");
+    if (destinationFile == NULL) {
+        fclose(sourceFile);
+        printf("Failed to open destination file '%s' for writing.\n", destinationPath);
+        return 0;
+    }
+
+    // Read and write the file content
+    char buffer[1024];
+    size_t bytesRead;
+
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), sourceFile)) > 0) {
+        if (fwrite(buffer, 1, bytesRead, destinationFile) != bytesRead) {
+            printf("Error writing to destination file '%s'.\n", destinationPath);
+            fclose(sourceFile);
+            fclose(destinationFile);
+            return 0; 
+        }
+    }
+
+    fclose(sourceFile);
+    fclose(destinationFile);
+
+    return 1; 
+}
+
+/* Backup implementation */
+int backupFiles(const char *folderPath) {
+    // Create a timestamp for the backup folder
+    time_t t = time(NULL);
+    struct tm currentTime = *localtime(&t);
+
+    char timestamp[50];
+    snprintf(timestamp, sizeof(timestamp), "backup_%d_%02d_%02d_%02d_%02d_%02d",
+             currentTime.tm_year + 1900, currentTime.tm_mon + 1, currentTime.tm_mday,
+             currentTime.tm_hour, currentTime.tm_min, currentTime.tm_sec);
+
+    // Concatenate the backup folder name with the timestamp
+    char backupFolderPath[256];
+    snprintf(backupFolderPath, sizeof(backupFolderPath), "%s/%s", folderPath, timestamp);
+
+    // Create the backup folder
+    if (mkdir(backupFolderPath) != 0) {
+        printf("Failed to create backup folder.\n");
+        return 0;
+    }
+
+    // Open the source folder
+    DIR *sourceDir;
+    if ((sourceDir = opendir(folderPath)) == NULL) {
+        printf("Failed to open source folder '%s' for backup.\n", folderPath);
+        return 0;
+    }
+
+    struct dirent *ent;
+    while ((ent = readdir(sourceDir)) != NULL) {
+        // Skip "." and ".."
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
+            continue;
+        }
+
+        char sourcePath[256];
+        char backupPath[256];
+
+        snprintf(sourcePath, sizeof(sourcePath), "%s/%s", folderPath, ent->d_name);
+        snprintf(backupPath, sizeof(backupPath), "%s/%s", backupFolderPath, ent->d_name);
+
+        if (copyFile(sourcePath, backupPath) != 1) {
+            printf("Failed to copy file '%s' to backup folder.\n", ent->d_name);
+        } else {
+            printf("Copied '%s' to backup folder.\n", ent->d_name);
+        }
+    }
+
+    closedir(sourceDir);
+
+    printf("Backup completed successfully at: %s\n", backupFolderPath);
+    return 1;
+}
+
 // Function to rename files in a folder
-void renameFilesInFolder(const char *folderPath, const char *name, int startCounter, int includeTime, int includeLogging) 
+void renameFilesInFolder(const char *folderPath, const char *name, int startCounter, int includeTimestamp, int includeLogging, int includeBackup) 
 {
     DIR *dir;
     struct dirent *ent;
     int counter = startCounter; // Initialize the counter with the startCounter value
     char logFilePath[256]; // Buffer for the log path
+
+    /* Check if a backup is requested */ 
+    if (includeBackup) {
+        backupFiles(folderPath);
+    }
 
     /* Start the logging process */
     if (includeLogging) {
@@ -80,7 +176,7 @@ void renameFilesInFolder(const char *folderPath, const char *name, int startCoun
 
                     snprintf(oldName, sizeof(oldName), "%s/%s", folderPath, ent->d_name);
 
-                    if (includeTime) {
+                    if (includeTimestamp) {
 
                         time_t t = time(NULL);
                         struct tm currentTime = *localtime(&t);
@@ -129,7 +225,7 @@ void renameFilesInFolder(const char *folderPath, const char *name, int startCoun
     }
 }
 
-void takeNameFromTxt(const char *folderPath, int includeLogging) 
+void takeNameFromTxt(const char *folderPath, int includeLogging, int includeBackup) 
 {
     DIR *dir;
     struct dirent *ent;
@@ -138,7 +234,7 @@ void takeNameFromTxt(const char *folderPath, int includeLogging)
     long long int numberInFileInt; // Needed for incrementation of the number in file
     char logFilePath[256]; // Buffer for the log path
 
-    if((fptr = fopen("randomname.txt", "r")) == NULL) {
+    if((fptr = fopen("random_name.txt", "r")) == NULL) {
         printf("Failed to open file\n");
         fclose(fptr);
         return;
@@ -160,6 +256,11 @@ void takeNameFromTxt(const char *folderPath, int includeLogging)
     if (*endptr != '\0' || strspn(numberInFile, "0123456789") != strlen(numberInFile)) {
         printf("Invalid number in file\n");
         return;
+    }
+
+    /* Check if a backup is requested */ 
+    if (includeBackup) {
+        backupFiles(folderPath);
     }
 
     /* Start logging process */
@@ -216,11 +317,16 @@ void takeNameFromTxt(const char *folderPath, int includeLogging)
         logToFile(logMessage, logFilePath);
         }
     } 
-    if((fptr = fopen("randomname.txt", "w")) == NULL) {
+    if (includeLogging) {
+        char logMessage[512];
+        snprintf(logMessage, sizeof(logMessage), "Renaming process finished.");
+        logToFile(logMessage, logFilePath);
+    }
+    if((fptr = fopen("random_name.txt", "w")) == NULL) {
         printf("Failed to open file\n");
         if (includeLogging) {
             char logMessage[512];
-            snprintf(logMessage, sizeof(logMessage), "Failed to open file: randomname.txt for writing");
+            snprintf(logMessage, sizeof(logMessage), "Failed to open file: random_name.txt for writing");
             logToFile(logMessage, "rename_log.txt");
         }
         fclose(fptr);
@@ -233,19 +339,20 @@ void takeNameFromTxt(const char *folderPath, int includeLogging)
 int main(int argc, char *argv[]) 
 {
     if (argc < 3) {
-        printf("Usage: %s <folder_path> -r <new_filename> [-s <start_counter>] [-d] [-l]\n", argv[0]);
+        printf("Usage: %s <folder_path> -r <new_filename> [-s <start_counter>] [-d] [-l] [-b]\n", argv[0]);
         printf("or\n");
-        printf("Usage: %s <folder_path> -t [-l]\n", argv[0]);
+        printf("Usage: %s <folder_path> -t [-l] [-b]\n", argv[0]);
         return 1;
     }
 
     char folderPath[256];
     char name[256];
-    int startCounter = 0; // Default startCounter value
-    int includeTime = false;
+    int startCounter = 0;
+    int includeTimestamp = false;
     int includeLogging = false;
     int inputFlagChecker = false;
     int inputRename = false;
+    int includeBackup = false;
 
     // Parse command-line arguments
     strncpy(folderPath, argv[1], sizeof(folderPath) - 1);
@@ -257,19 +364,21 @@ int main(int argc, char *argv[])
         } else if (strcmp(argv[i], "-s") == 0 && i + 1 < argc) {
             startCounter = atoi(argv[i + 1]);
         } else if (strcmp(argv[i], "-d") == 0) {
-            includeTime = true;
+            includeTimestamp = true;
         } else if (strcmp(argv[i], "-l") == 0) {
             includeLogging = true;
         } else if (strcmp(argv[i], "-t") == 0) {
             inputFlagChecker = true;
+        } else if (strcmp(argv[i], "-b") == 0) {
+            includeBackup = true;
         }
     }
     
     /* Protection for incorrect use of flags */
     if (
-        (inputFlagChecker && (includeTime || startCounter > 0)) 
+        (inputFlagChecker && (includeTimestamp || startCounter > 0)) 
         || 
-        (!inputFlagChecker && (name[0] == '\0' || (includeTime && includeLogging))) 
+        (!inputFlagChecker && (name[0] == '\0' && (includeTimestamp && includeLogging))) 
         ||
         (inputFlagChecker && inputRename)   
         ) 
@@ -279,9 +388,9 @@ int main(int argc, char *argv[])
     }
 
     if (inputFlagChecker) {
-        takeNameFromTxt(folderPath, includeLogging);
+        takeNameFromTxt(folderPath, includeLogging, includeBackup);
     } else {
-        renameFilesInFolder(folderPath, name, startCounter, includeTime, includeLogging);
+        renameFilesInFolder(folderPath, name, startCounter, includeTimestamp, includeLogging, includeBackup);
     }
 
     return 0;
