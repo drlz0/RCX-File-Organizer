@@ -1,6 +1,6 @@
 ## Organize your files
 A command-line utility written in C to batch rename files in a directory. The program allows users to rename files with a specified prefix, start counter, and additional options such as including timestamps, logging, and backup.<br>
-Works on Linux (tested only on Debian) and Windows 10<br>
+Works on Linux (tested only on Debian) and Windows 10.<br>
 ## Features
 - Rename multiple files in a directory with a specified prefix and start counter<br>
 - Timestamps: Include timestamps in the new file names<br>
