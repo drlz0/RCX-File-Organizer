@@ -17,8 +17,8 @@ or
 ## Usage
 - **<folder_path>** - Folder which content files will be renamed.
 - **-r <new_filename>** - Rename the files in the folder with given name incrementaly. For example -r filename_ will rename files to filename_0, filename_1, filename_2 and so.
-- **-s <start_number>** - Increment from given number. For example -s 34 will rename files to filename_34, filename_35, filename_36 and so.
-- **-t** - Get number from text file, rename file according to this number, increment number in file by 1 and rename another file in folder with new number. For example if number in file is 12345, the files will be renamed to 12345, 12346, 12347 and so.
+- **-s <start_number>** - Increment from given number. For example -s 34 will rename files to filename_34, filename_35, filename_36 and so on.
+- **-t** - Get number from text file, rename file according to this number, increment number in file by 1 and rename another file in folder with new number. For example if number in file is 12345, the files will be renamed to 12345, 12346, 12347 and so on.
 - **-d** - Include timestamps in the new filenames. This will rename files to filename_x_year_month_day_hour_min_sec.
 - **-l** - Enable logging of the renaming process. Logs text file will be created in the same directory as renamed files.
 - **-b** - Create a backup of files before renaming. Backup folder will be created in the same directory as renamed files.
