@@ -1,28 +1,36 @@
-#include "utilities.h"
-#include "main.h"
+#include "../include/utilities.h"
+#include "../include/main.h"
+#include <string.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <errno.h>
 
 // Function to check if a file has an image extension
 int isImageFile(const char *fileName) 
 {
-    const char *imageExtensions[] = {".jpg", ".jpeg", ".png", ".bmp", ".mp4", ".webm", ".gif"}; // Add more image extensions if needed
+    const char *imageExtensions[] = {".jpg", ".jpeg", ".png", ".bmp", ".mp4", ".webm", ".gif"};
     int numExtensions = sizeof(imageExtensions) / sizeof(imageExtensions[0]);
 
     char lowercaseFileName[256];
-    strcpy(lowercaseFileName, fileName);
+    strncpy(lowercaseFileName, fileName, sizeof(lowercaseFileName) - 1);
+    lowercaseFileName[sizeof(lowercaseFileName) - 1] = '\0';
     for (int i = 0; i < strlen(lowercaseFileName); i++) {
         lowercaseFileName[i] = tolower(lowercaseFileName[i]);
     }
 
     for (int i = 0; i < numExtensions; i++) {
         if (strstr(lowercaseFileName, imageExtensions[i]) != NULL) {
-            return 1; // File has an image extension
+            return 1;
         }
     }
 
-    return 0; // File does not have an image extension
+    return 0;
 }
 
-/* Loggin implementation */
+// Logging implementation
 void logToFile(const char *logMessage, const char *logFilePath) 
 {
     FILE *logFile = fopen(logFilePath, "a");
@@ -38,21 +46,19 @@ void logToFile(const char *logMessage, const char *logFilePath)
 
         fclose(logFile);
     } else {
-        printf("Failed to open log file.\n");
+        printf("Failed to open log file: %s\n", logFilePath);
     }
 }
 
-/* File copying function */
+// File copying function
 int copyFile(const char *sourcePath, const char *destinationPath) 
 {
-    // Open the source file for reading
     FILE *sourceFile = fopen(sourcePath, "rb");
     if (sourceFile == NULL) {
         printf("Failed to open source file '%s' for reading.\n", sourcePath);
-        return 0; 
+        return 0;
     }
 
-    // Open the destination file for writing
     FILE *destinationFile = fopen(destinationPath, "wb");
     if (destinationFile == NULL) {
         fclose(sourceFile);
@@ -60,7 +66,6 @@ int copyFile(const char *sourcePath, const char *destinationPath)
         return 0;
     }
 
-    // Read and write the file content
     char buffer[1024];
     size_t bytesRead;
 
@@ -69,67 +74,12 @@ int copyFile(const char *sourcePath, const char *destinationPath)
             printf("Error writing to destination file '%s'.\n", destinationPath);
             fclose(sourceFile);
             fclose(destinationFile);
-            return 0; 
+            return 0;
         }
     }
 
     fclose(sourceFile);
     fclose(destinationFile);
 
-    return 1; 
-}
-
-/* Backup implementation */
-int backupFiles(const char *folderPath) 
-{
-    // Create a timestamp for the backup folder
-    time_t t = time(NULL);
-    struct tm currentTime = *localtime(&t);
-
-    char timestamp[50];
-    snprintf(timestamp, sizeof(timestamp), "backup_%d_%02d_%02d_%02d_%02d_%02d",
-             currentTime.tm_year + 1900, currentTime.tm_mon + 1, currentTime.tm_mday,
-             currentTime.tm_hour, currentTime.tm_min, currentTime.tm_sec);
-
-    // Concatenate the backup folder name with the timestamp
-    char backupFolderPath[256];
-    snprintf(backupFolderPath, sizeof(backupFolderPath), "%s/%s", folderPath, timestamp);
-
-    // Create the backup folder
-    if (mkdir(backupFolderPath) != 0) {
-        printf("Failed to create backup folder.\n");
-        return 0;
-    }
-
-    // Open the source folder
-    DIR *sourceDir;
-    if ((sourceDir = opendir(folderPath)) == NULL) {
-        printf("Failed to open source folder '%s' for backup.\n", folderPath);
-        return 0;
-    }
-
-    struct dirent *ent;
-    while ((ent = readdir(sourceDir)) != NULL) {
-        // Skip "." and ".."
-        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0) {
-            continue;
-        }
-
-        char sourcePath[256];
-        char backupPath[256];
-
-        snprintf(sourcePath, sizeof(sourcePath), "%s/%s", folderPath, ent->d_name);
-        snprintf(backupPath, sizeof(backupPath), "%s/%s", backupFolderPath, ent->d_name);
-
-        if (copyFile(sourcePath, backupPath) != 1) {
-            printf("Failed to copy file '%s' to backup folder.\n", ent->d_name);
-        } else {
-            printf("Copied '%s' to backup folder.\n", ent->d_name);
-        }
-    }
-
-    closedir(sourceDir);
-
-    printf("Backup completed successfully at: %s\n", backupFolderPath);
     return 1;
 }

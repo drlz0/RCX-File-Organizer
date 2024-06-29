@@ -1,6 +1,6 @@
-#include "main.h"
-#include "main_functionality.h"
-#include "utilities.h"
+#include "../include/main.h"
+#include "../include/main_functionality.h"
+#include "../include/utilities.h"
 
 int main(int argc, char *argv[]) 
 {
