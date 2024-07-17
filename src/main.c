@@ -1,9 +1,20 @@
 #include "../include/main.h"
+
+#ifdef _WIN32
+    #define OS_NAME "Windows"
+#else
+    #define OS_NAME "Linux"
+#endif
+
+#include "../include/main.h"
 #include "../include/main_functionality.h"
 #include "../include/utilities.h"
 
+
 int main(int argc, char *argv[]) 
 {
+    printf("Operating System: %s\n", OS_NAME);
+
     if (argc < 3) {
         printf("Usage: %s <folder_path> -r <new_filename> [-s <start_counter>] [-d] [-l] [-b]\n", argv[0]);
         printf("or\n");
@@ -14,11 +25,11 @@ int main(int argc, char *argv[])
     char folderPath[256];
     char name[256];
     int startCounter = 0;
-    int includeTimestamp = false;
-    int includeLogging = false;
-    int inputFlagChecker = false;
-    int inputRename = false;
-    int includeBackup = false;
+    int includeTimestamp = 0;
+    int includeLogging = 0;
+    int inputFlagChecker = 0;
+    int inputRename = 0;
+    int includeBackup = 0;
 
     // Parse command-line arguments
     strncpy(folderPath, argv[1], sizeof(folderPath) - 1);
